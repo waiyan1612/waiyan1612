@@ -1,0 +1,82 @@
+name: Update README
+
+on:
+  schedule:
+    - cron: "30 5 14 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.expand.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - run: pip install pyyaml -q
+
+      - id: expand
+        run: |
+          matrix=$(python3 .github/scripts/generate_matrix.py)
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  generate:
+    name: "generate ${{ matrix.repo }}"
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Clear stale assets
+        run: rm -rf assets/
+
+      - name: Generate card
+        uses: readme-tools/github-readme-stats-action@v1
+        with:
+          card: pin
+          options: username=${{ github.repository_owner }}&repo=${{ matrix.repo }}
+          path: assets/${{ matrix.slug }}/${{ matrix.repo }}.svg
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.slug }}-${{ matrix.repo }}
+          path: assets/
+
+  assemble:
+    needs: [setup, generate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Clear stale assets
+        run: rm -rf assets/
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: assets/
+          merge-multiple: true
+
+      - run: pip install pyyaml jinja2 -q
+
+      - name: Generate README
+        env:
+          REPO_OWNER: ${{ github.repository_owner }}
+        run: python3 .github/scripts/generate_readme.py
+
+      - name: Squash to root commit
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan temp-root
+          git rm -r --cached -f . -q
+          git add .
+          git commit -m "Initial commit"
+          git push origin temp-root:main --force
