@@ -1,0 +1,20 @@
+# Hi there 👋
+
+{% for section in sections %}
+    {% if section.svgs %}
+## {{ section.title }}
+*{{ section.description }}*
+
+        {% for svg in section.svgs %}
+<a href="https://github.com/{{ repo_owner }}/{{ svg.name }}"><img align="left" src="{{ svg.path }}" /></a>
+            {% if loop.index is divisibleby 2 %}
+<br clear="both" />
+
+            {% endif %}
+        {% endfor %}
+        {% if section.svgs | length is not divisibleby 2 %}
+<br clear="both" />
+
+        {% endif %}
+    {% endif %}
+{% endfor %}

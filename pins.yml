@@ -1,0 +1,21 @@
+sections:
+  - title: 📽️ framework demos
+    description: See what others have built
+    repos:
+      - data-quality-demos
+      - data-lineage-demos
+      - data-pipeline-demos
+      - postgres-kafka-iceberg-pipeline
+  - title: 🛝 playgrounds
+    description: Get to work
+    repos:
+      - playground-kafka
+      - playground-java
+      - playground-python
+      - ume
+  - title: 🍲 cooked
+    description: Sometimes, with vibes
+    repos:
+      - WillowTeX
+      - rtpa
+      - screen-grabber 
